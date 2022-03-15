@@ -8,25 +8,47 @@ var items = {};
 // Public API - Fix these CRUD functions ///////////////////////////////////////
 
 exports.create = (text, callback) => {
-  var id = counter.getNextUniqueId();
-  items[id] = text;
-  callback(null, { id, text });
+  // getNextUniqueId function needs callback
+  //fs.writeFile (exports.dataDir, text, callback)
+  counter.getNextUniqueId((err, id) => {
+    // console.log('ID', id);
+
+    fs.writeFile(path.join(exports.dataDir, id + '.txt'), text, (err) => {
+      if (err) {
+        throw ('error');
+      } else {
+        items[id] = text;
+        // console.log('ITEMS', items)
+        // console.log('TEXT', text)
+        // console.log(items[id])
+        callback(null, {id, text});
+      }
+    });
+  });
 };
 
 exports.readAll = (callback) => {
-  var data = _.map(items, (text, id) => {
-    return { id, text };
+  var storage = [];
+  fs.readdir(exports.dataDir, function(err, data) {
+    _.map(data, file => {
+      var arrayFile = file.split('.');
+      var id = arrayFile[0];
+      storage.push({id, text: id});
+    });
+    callback(null, storage);
   });
-  callback(null, data);
 };
 
 exports.readOne = (id, callback) => {
-  var text = items[id];
-  if (!text) {
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    callback(null, { id, text });
-  }
+  //use fs.readfile (data )
+  fs.readFile(path.join(exports.dataDir, id + '.txt'), 'utf8', (err, text) => {
+    var text = items[id];
+    if (err) {
+      callback(new Error(`No item with id: ${id}`));
+    } else {
+      callback(null, { id, text });
+    }
+  });
 };
 
 exports.update = (id, text, callback) => {

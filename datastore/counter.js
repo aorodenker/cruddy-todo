@@ -38,9 +38,13 @@ const writeCounter = (count, callback) => {
 
 // Public API - Fix this function //////////////////////////////////////////////
 
-exports.getNextUniqueId = () => {
-  counter = counter + 1;
-  return zeroPaddedNumber(counter);
+exports.getNextUniqueId = (callback) => {
+  //readcounter , writecounter // Error first call back pattern
+  readCounter(function(err, data) {
+    writeCounter(data + 1, function (err, data) {
+      callback(null, data);
+    });
+  });
 };
 
 
