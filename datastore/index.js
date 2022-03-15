@@ -2,10 +2,15 @@ const fs = require('fs');
 const path = require('path');
 const _ = require('underscore');
 const counter = require('./counter');
+var Promise = require('bluebird');
+var readFilePromise = Promise.promisify(fs.readFile);
 
 var items = {};
 
 // Public API - Fix these CRUD functions ///////////////////////////////////////
+// var nodeStyle = require('./callbackReview.js');
+// var pluckFirstLineFromFileAsync = Promise.promisify(nodeStyle.pluckFirstLineFromFile)
+// var getStatusCodeAsync = Promise.promisify(nodeStyle.getStatusCode)
 
 exports.create = (text, callback) => {
   // getNextUniqueId function needs callback
@@ -26,18 +31,34 @@ exports.create = (text, callback) => {
     });
   });
 };
-
+//use Promise.all
 exports.readAll = (callback) => {
-  var storage = [];
+  // var storage = [];
   fs.readdir(exports.dataDir, function(err, data) {
-    _.map(data, file => {
-      var arrayFile = file.split('.');
-      var id = arrayFile[0];
-      storage.push({id, text: id});
+    if (err) {
+      throw ('error');
+    }
+    var mapping = _.map(data, file => {
+      var id = path.basename(file, '.txt');
+      var filepath = path.join(exports.dataDir, file);
+      return readFilePromise(filepath).then(fileData => {
+        return {
+          id: id, text: fileData.toString()
+        };
+      });
     });
-    callback(null, storage);
+    Promise.all(mapping).then((values) => {
+      callback(null, values), err => callback(err);
+    });
   });
 };
+
+
+
+
+//    Promise.all(data)
+// .then(items => callback(null, items), err => callback(err));
+// });
 
 exports.readOne = (id, callback) => {
   //use fs.readfile (data )
@@ -94,7 +115,15 @@ exports.delete = (id, callback) => {
   // }
 };
 
-// Config+Initialization code -- DO NOT MODIFY /////////////////////////////////
+// Config+Initialization code -- DO NOT MODIFY ////////////////////////////////
+// var createAsync = Promise.promisify(exports.create);
+// var readAllAsync = Promise.promisify(exports.readAll);
+// var readOneAsync = Promise.promisify(exports.readOne);
+// var updateAsync = Promise.promisify(exports.update);
+// var deleteAsync = Promise.promisify(exports.delete);
+// Promise.all([createAsync, readAllAsync, readOneAsync, updateAsync, deleteAsync]).then((values) => {
+//   console.log(values);
+// });
 
 exports.dataDir = path.join(__dirname, 'data');
 
